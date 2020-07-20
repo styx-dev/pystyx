@@ -83,7 +83,10 @@ class FieldsParser:
             raise TypeError("'fields' cannot be empty (what are we mapping?)")
 
         for field_name, field in fields.items():
-            field_objs[field_name] = self._parse(field)
+            field_obj = self.parse_field(field)
+            field_objs[field_name] = self.parse_extra_fields(
+                field_name, field, field_obj
+            )
 
         return field_objs
 
@@ -132,6 +135,21 @@ class FieldsParser:
 
             else:
                 raise TypeError("possible_paths must be a list of strings.")
+
+        return field_obj
+
+    def parse_extra_fields(self, field_name, field, field_obj):
+        """
+        Handle non-reserved keywords on the Field object
+
+        For now, the only allowed non-reserved keyword is the parent's field_name
+        """
+        for key, value in field.items():
+            if key in self.reserved_words:
+                continue
+
+            if key != field_name:
+                raise TypeError(f"Unknown key found on field definition: {field_name}")
 
         return field_obj
 

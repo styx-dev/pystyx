@@ -56,7 +56,6 @@ def field_input_obj():
     return munchify(
         {
             "input_paths": ["foo.bar"],
-            "output_path": "foo.bar",
             "function": "parse_json",
             "or_else": "{}",
             "on_throw": "throw",
@@ -70,7 +69,6 @@ def field_possible_paths_obj():
         {
             "possible_paths": ["foo.bar"],
             "path_condition": {"field": "bar", "value": 1},
-            "output_path": "foo.bar",
             "function": "parse_json",
             "or_else": "{}",
             "on_throw": "throw",
@@ -313,16 +311,13 @@ class TestFields:
         with pytest.raises(TypeError, match="'or_else' must be defined"):
             fields_parser.parse_field(field_input_obj)
 
-    @pytest.mark.skip
     def test_unknown_non_nested_keys_raises(self, fields_parser, field_input_obj):
-        field_input_obj.on_throw = "hades"
-        with pytest.raises(TypeError, match=f"Unknown key 'hades' on fields object"):
-            fields_parser.parse_field(field_input_obj)
-
-    @pytest.mark.skip
-    def test_nested_fields_require_parent_field_as_base(self):
-        nested_obj = munchify({"fields.olympian": ""})
-        pass
+        field_obj = Munch()
+        field_input_obj["hades"] = "god of underworld"
+        with pytest.raises(
+            TypeError, match=f"Unknown key found on field definition: zeus"
+        ):
+            fields_parser.parse_extra_fields("zeus", field_input_obj, field_obj)
 
 
 class TestPostprocess:
