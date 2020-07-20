@@ -15,10 +15,12 @@ def get_cwd() -> str:
     return Path(__file__).parent
 
 
-def create_maps() -> Dict[str, Mapper]:
+def create_maps(
+    maps_location="maps", functions_location="functions.styx"
+) -> Dict[str, Mapper]:
     cwd = get_cwd()
-    styx_files: Generator[Path] = cwd.glob("maps/*.styx")
-    functions_file: Path = cwd.path("functions.styx")
+    styx_files: Generator[Path] = cwd.glob(f"{maps_location}/*.styx")
+    functions_file: Path = cwd.path(functions_location)
     functions_toml = (
         munchify(toml.load(functions_file)) if functions_file.exists() else None
     )

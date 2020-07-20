@@ -151,6 +151,8 @@ class FieldsParser:
             if key != field_name:
                 raise TypeError(f"Unknown key found on field definition: {field_name}")
 
+            field_obj[key] = value
+
         return field_obj
 
 
