@@ -66,9 +66,31 @@ class PostprocessParser(ProcessParser):
 
 
 class FieldsParser:
+    reserved_words = {
+        "input_paths",
+        "possible_paths",
+        "path_condition",
+        "type",
+        "function",
+        "or_else",
+        "on_throw",
+    }
+
     def parse(self, fields):
         fields_obj = Munch()
 
+        fields_obj = self.parse_paths(fields, fields_obj)
+
+        if fields.get("or_else"):
+            fields_obj.or_else = fields.or_else
+
+        if fields.get("on_throw"):
+            throw_action = parse_on_throw(fields, fields_obj)
+            fields_obj.on_throw = throw_action
+
+        return fields_obj
+
+    def parse_paths(self, fields, fields_obj):
         if not hasattr(fields, "input_paths") and not hasattr(fields, "possible_paths"):
             raise TypeError(
                 "Either 'input_paths' or 'possible_paths' must be declared. Aborting."
@@ -99,13 +121,6 @@ class FieldsParser:
 
             else:
                 raise TypeError("possible_paths must be a list of strings.")
-
-        if fields.get("or_else"):
-            fields_obj.or_else = fields.or_else
-
-        if fields.get("on_throw"):
-            throw_action = parse_on_throw(fields, fields_obj)
-            fields_obj.on_throw = throw_action
 
         return fields_obj
 
