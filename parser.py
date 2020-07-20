@@ -77,52 +77,63 @@ class FieldsParser:
     }
 
     def parse(self, fields):
-        fields_obj = Munch()
+        field_objs = Munch()
 
-        fields_obj = self.parse_paths(fields, fields_obj)
+        if not fields:
+            raise TypeError("'fields' cannot be empty (what are we mapping?)")
 
-        if fields.get("or_else"):
-            fields_obj.or_else = fields.or_else
+        for field_name, field in fields.items():
+            field_objs[field_name] = self._parse(field)
 
-        if fields.get("on_throw"):
-            throw_action = parse_on_throw(fields, fields_obj)
-            fields_obj.on_throw = throw_action
+        return field_objs
 
-        return fields_obj
+    def parse_field(self, field):
+        field_obj = Munch()
 
-    def parse_paths(self, fields, fields_obj):
-        if not hasattr(fields, "input_paths") and not hasattr(fields, "possible_paths"):
+        field_obj = self.parse_paths(field, field_obj)
+
+        if field.get("or_else"):
+            field_obj.or_else = field.or_else
+
+        if field.get("on_throw"):
+            throw_action = parse_on_throw(field, field_obj)
+            field_obj.on_throw = throw_action
+
+        return field_obj
+
+    def parse_paths(self, field, field_obj):
+        if not hasattr(field, "input_paths") and not hasattr(field, "possible_paths"):
             raise TypeError(
                 "Either 'input_paths' or 'possible_paths' must be declared. Aborting."
             )
 
-        if hasattr(fields, "input_paths") and hasattr(fields, "possible_paths"):
+        if hasattr(field, "input_paths") and hasattr(field, "possible_paths"):
             raise TypeError(
                 "Either 'input_paths' or 'possible_paths' must be declared, but not both."
             )
 
-        if hasattr(fields, "input_paths"):
-            if isinstance(fields.input_paths, list) and all(
-                isinstance(element, str) for element in fields.input_paths
+        if hasattr(field, "input_paths"):
+            if isinstance(field.input_paths, list) and all(
+                isinstance(element, str) for element in field.input_paths
             ):
-                fields_obj.input_paths = fields.input_paths
+                field_obj.input_paths = field.input_paths
 
             else:
                 raise TypeError("input_paths must be a list of strings.")
         else:
-            if isinstance(fields.possible_paths, list) and all(
-                isinstance(element, str) for element in fields.possible_paths
+            if isinstance(field.possible_paths, list) and all(
+                isinstance(element, str) for element in field.possible_paths
             ):
-                if not fields.get("path_condition"):
+                if not field.get("path_condition"):
                     raise TypeError(
                         "'path_condition' must be set if 'possible_paths' is set."
                     )
-                fields_obj.possible_paths = fields.possible_paths
+                field_obj.possible_paths = field.possible_paths
 
             else:
                 raise TypeError("possible_paths must be a list of strings.")
 
-        return fields_obj
+        return field_obj
 
 
 class Parser:

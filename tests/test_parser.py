@@ -52,7 +52,7 @@ def preprocessor_obj():
 
 
 @pytest.fixture
-def fields_input_obj():
+def field_input_obj():
     return munchify(
         {
             "input_paths": ["foo.bar"],
@@ -65,7 +65,7 @@ def fields_input_obj():
 
 
 @pytest.fixture
-def fields_possible_paths_obj():
+def field_possible_paths_obj():
     return munchify(
         {
             "possible_paths": ["foo.bar"],
@@ -197,121 +197,127 @@ class TestPreprocess:
 
 
 class TestFields:
-    def test_fields_is_required(self, parser, fields_input_obj):
+    def test_fields_is_required(self, parser, field_input_obj):
         obj = Munch()
         with pytest.raises(TypeError, match="'fields' is a required field"):
             parser.parse(obj)
 
+    def test_empty_fields_raises(self, fields_parser, field_input_obj):
+        empty_fields = Munch()
+        with pytest.raises(TypeError, match="'fields' cannot be empty"):
+            fields_parser.parse(empty_fields)
+
     def test_fields_input_paths_or_possible_paths_is_required(
-        self, fields_parser, fields_input_obj, fields_possible_paths_obj
+        self, fields_parser, field_input_obj, field_possible_paths_obj
     ):
-        fields_parser.parse(fields_input_obj)
-        fields_parser.parse(fields_possible_paths_obj)
-        no_paths_object = munchify({})
+        fields_parser.parse_field(field_input_obj)
+        fields_parser.parse_field(field_possible_paths_obj)
+
+        no_paths_obj = field_input_obj
+        del no_paths_obj.input_paths
+
         with pytest.raises(
             TypeError, match="Either 'input_paths' or 'possible_paths' must be declared"
         ):
-            fields_parser.parse(no_paths_object)
+            fields_parser.parse_field(no_paths_obj)
 
     def test_input_paths_and_possible_paths_cant_both_be_declared(
-        self, fields_parser, fields_input_obj, fields_possible_paths_obj
+        self, fields_parser, field_input_obj, field_possible_paths_obj
     ):
         both_paths_object = munchify({"input_paths": [], "possible_paths": []})
         with pytest.raises(
             TypeError,
             match="Either 'input_paths' or 'possible_paths' must be declared, but not both.",
         ):
-            fields_parser.parse(both_paths_object)
+            fields_parser.parse_field(both_paths_object)
 
-    def test_input_paths_is_list_of_strings(self, fields_parser, fields_input_obj):
-        fields_parser.parse(fields_input_obj)
+    def test_input_paths_is_list_of_strings(self, fields_parser, field_input_obj):
+        fields_parser.parse_field(field_input_obj)
 
-    def test_input_paths_not_list_raises(self, fields_parser, fields_input_obj):
+    def test_input_paths_not_list_raises(self, fields_parser, field_input_obj):
         not_list_obj = munchify({"input_paths": 0})
         with pytest.raises(
             TypeError, match="input_paths must be a list of strings",
         ):
-            fields_parser.parse(not_list_obj)
+            fields_parser.parse_field(not_list_obj)
 
     def test_input_paths_not_list_of_strings_raises(
-        self, fields_parser, fields_input_obj
+        self, fields_parser, field_input_obj
     ):
         not_list_obj = munchify({"input_paths": [0]})
         with pytest.raises(
             TypeError, match="input_paths must be a list of strings",
         ):
-            fields_parser.parse(not_list_obj)
+            fields_parser.parse_field(not_list_obj)
 
     def test_potential_paths_is_list_of_strings(
-        self, fields_parser, fields_possible_paths_obj
+        self, fields_parser, field_possible_paths_obj
     ):
-        fields_parser.parse(fields_possible_paths_obj)
+        fields_parser.parse_field(field_possible_paths_obj)
 
     def test_potential_paths_not_list_raises(
-        self, fields_parser, fields_possible_paths_obj
+        self, fields_parser, field_possible_paths_obj
     ):
         not_list_obj = munchify({"possible_paths": 0})
         with pytest.raises(
             TypeError, match="possible_paths must be a list of strings",
         ):
-            fields_parser.parse(not_list_obj)
+            fields_parser.parse_field(not_list_obj)
 
     def test_potential_paths_not_list_of_strings_raises(
-        self, fields_parser, fields_possible_paths_obj
+        self, fields_parser, field_possible_paths_obj
     ):
         not_list_obj = munchify({"possible_paths": [0]})
         with pytest.raises(
             TypeError, match="possible_paths must be a list of strings",
         ):
-            fields_parser.parse(not_list_obj)
+            fields_parser.parse_field(not_list_obj)
 
     def test_paths_condition_is_required_if_possible_paths_is_set(
-        self, fields_parser, fields_possible_paths_obj
+        self, fields_parser, field_possible_paths_obj
     ):
-        del fields_possible_paths_obj.path_condition
+        del field_possible_paths_obj.path_condition
         with pytest.raises(
             TypeError, match="'path_condition' must be set if 'possible_paths' is set",
         ):
-            fields_parser.parse(fields_possible_paths_obj)
+            fields_parser.parse_field(field_possible_paths_obj)
 
-    def test_type_is_optional(self, fields_parser, fields_input_obj):
-        if hasattr(fields_input_obj, "type"):
-            del fields_input_obj.type
-        fields_parser.parse(fields_input_obj)
+    def test_type_is_optional(self, fields_parser, field_input_obj):
+        if hasattr(field_input_obj, "type"):
+            del field_input_obj.type
+        fields_parser.parse_field(field_input_obj)
 
-    def test_function_is_optional(self, fields_parser, fields_input_obj):
-        if hasattr(fields_input_obj, "function"):
-            del fields_input_obj.function
-        fields_parser.parse(fields_input_obj)
+    def test_function_is_optional(self, fields_parser, field_input_obj):
+        if hasattr(field_input_obj, "function"):
+            del field_input_obj.function
+        fields_parser.parse_field(field_input_obj)
 
-    def test_or_else_is_optional(self, fields_parser, fields_input_obj):
-        if hasattr(fields_input_obj, "or_else"):
-            del fields_input_obj.or_else
-        fields_parser.parse(fields_input_obj)
+    def test_or_else_is_optional(self, fields_parser, field_input_obj):
+        if hasattr(field_input_obj, "or_else"):
+            del field_input_obj.or_else
+        fields_parser.parse_field(field_input_obj)
 
     def test_on_throw_with_or_else_parses_or_else_successfully(
-        self, fields_parser, fields_input_obj
+        self, fields_parser, field_input_obj
     ):
         from ..shared import OnThrowValue
 
-        fields_input_obj.on_throw = "or_else"
-        parsed_obj = fields_parser.parse(fields_input_obj)
+        field_input_obj.on_throw = "or_else"
+        parsed_obj = fields_parser.parse_field(field_input_obj)
         assert parsed_obj["on_throw"].value == OnThrowValue.OrElse.value
 
-    def test_on_throw_with_or_else_missing_raises(
-        self, fields_parser, fields_input_obj
-    ):
-        fields_input_obj.on_throw = "or_else"
-        del fields_input_obj.or_else
+    def test_on_throw_with_or_else_missing_raises(self, fields_parser, field_input_obj):
+        field_input_obj.on_throw = "or_else"
+        del field_input_obj.or_else
 
         with pytest.raises(TypeError, match="'or_else' must be defined"):
-            fields_parser.parse(fields_input_obj)
+            fields_parser.parse_field(field_input_obj)
 
     @pytest.mark.skip
-    def test_unknown_non_nested_keys_raises(self, fields_parser, fields_input_obj):
-        fields_input_obj.on_throw = "hades"
+    def test_unknown_non_nested_keys_raises(self, fields_parser, field_input_obj):
+        field_input_obj.on_throw = "hades"
         with pytest.raises(TypeError, match=f"Unknown key 'hades' on fields object"):
-            fields_parser.parse(fields_input_obj)
+            fields_parser.parse_field(field_input_obj)
 
     @pytest.mark.skip
     def test_nested_fields_require_parent_field_as_base(self):
