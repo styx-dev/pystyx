@@ -25,23 +25,8 @@ def parse_on_throw(from_obj, to_obj):
     return throw_action
 
 
-class Parser:
-    def parse(self, toml_obj: Munch):
-        parsed_obj = Munch()
-        if toml_obj.get("preprocess"):
-            parsed_obj["preprocess"] = self.parse_preprocess(toml_obj.preprocess)
-
-        if not hasattr(toml_obj, "fields"):
-            raise TypeError(
-                "'fields' is a required field for a Styx definition mapping."
-            )
-        parsed_obj["fields"] = self.parse_fields(toml_obj.fields)
-
-        if toml_obj.get("postprocess"):
-            parsed_obj["postprocess"] = self.parse_postprocess(toml_obj.postprocess)
-        return parsed_obj
-
-    def _process(self, process):
+class ProcessParser:
+    def process(self, process):
         process_obj = Munch()
         if isinstance(process.input_paths, list) and all(
             isinstance(element, str) for element in process.input_paths
@@ -69,10 +54,19 @@ class Parser:
 
         return process_obj
 
-    def parse_preprocess(self, preprocess):
-        return self._process(preprocess)
 
-    def parse_fields(self, fields):
+class PreprocessParser(ProcessParser):
+    def parse(self, preprocess):
+        return self.process(preprocess)
+
+
+class PostprocessParser(ProcessParser):
+    def parse(self, postprocess):
+        return self.process(postprocess)
+
+
+class FieldsParser:
+    def parse(self, fields):
         fields_obj = Munch()
 
         if not hasattr(fields, "input_paths") and not hasattr(fields, "possible_paths"):
@@ -115,5 +109,21 @@ class Parser:
 
         return fields_obj
 
-    def parse_postprocess(self, postprocess):
-        return self._process(postprocess)
+
+class Parser:
+    def parse(self, toml_obj: Munch):
+        parsed_obj = Munch()
+        if toml_obj.get("preprocess"):
+            parser = PreprocessParser()
+            parsed_obj["preprocess"] = parser.parse(toml_obj.preprocess)
+
+        if not hasattr(toml_obj, "fields"):
+            raise TypeError(
+                "'fields' is a required field for a Styx definition mapping."
+            )
+        parsed_obj["fields"] = self.parse_fields(toml_obj.fields)
+
+        if toml_obj.get("postprocess"):
+            parser = PostprocessParser()
+            parsed_obj["postprocess"] = parser.parse(toml_obj.postprocess)
+        return parsed_obj
