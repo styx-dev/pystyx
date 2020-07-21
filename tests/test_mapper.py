@@ -2,9 +2,9 @@ import pytest
 
 from munch import Munch, munchify
 
-from ..functions import parse_json
-from ..mapper import PreprocessMapper, PostprocessMapper, FieldsMapper
-from ..shared import OnThrowValue
+from pystyx.functions import parse_json
+from pystyx.mapper import PreprocessMapper, PostprocessMapper, FieldsMapper
+from pystyx.shared import OnThrowValue
 
 
 def throw(msg):

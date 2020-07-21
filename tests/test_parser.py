@@ -2,8 +2,9 @@ import pytest
 
 from munch import Munch, munchify
 
-from ..functions import TomlFunction, parse_json
-from ..parser import Parser, PreprocessParser, PostprocessParser, FieldsParser
+from pystyx.functions import TomlFunction, parse_json
+from pystyx.parser import Parser, PreprocessParser, PostprocessParser, FieldsParser
+from pystyx.shared import OnThrowValue
 
 
 @pytest.fixture
@@ -157,8 +158,6 @@ class TestPreprocess:
             preprocess_parser.process_action(preprocessor_obj)
 
     def test_on_throw_parses_valid_enums(self, preprocess_parser, preprocessor_obj):
-        from ..shared import OnThrowValue
-
         parsed_obj = preprocess_parser.process_action(preprocessor_obj)
         assert parsed_obj["on_throw"].value == OnThrowValue.Throw.value
 
@@ -174,8 +173,6 @@ class TestPreprocess:
     def test_on_throw_with_or_else_parses_or_else_successfully(
         self, preprocess_parser, preprocessor_obj
     ):
-        from ..shared import OnThrowValue
-
         preprocessor_obj.on_throw = "or_else"
         parsed_obj = preprocess_parser.process_action(preprocessor_obj)
         assert parsed_obj["on_throw"].value == OnThrowValue.OrElse.value
@@ -303,8 +300,6 @@ class TestFields:
     def test_on_throw_with_or_else_parses_or_else_successfully(
         self, fields_parser, field_input_obj
     ):
-        from ..shared import OnThrowValue
-
         field_input_obj.on_throw = "or_else"
         parsed_obj = fields_parser.parse_field(field_input_obj)
         assert parsed_obj["on_throw"].value == OnThrowValue.OrElse.value
@@ -402,8 +397,6 @@ class TestPostprocess:
             postprocess_parser.process_action(postprocessor_obj)
 
     def test_on_throw_parses_valid_enums(self, postprocess_parser, postprocessor_obj):
-        from ..shared import OnThrowValue
-
         parsed_obj = postprocess_parser.process_action(postprocessor_obj)
         assert parsed_obj["on_throw"].value == OnThrowValue.Throw.value
 
@@ -419,8 +412,6 @@ class TestPostprocess:
     def test_on_throw_with_or_else_parses_or_else_successfully(
         self, postprocess_parser, postprocessor_obj
     ):
-        from ..shared import OnThrowValue
-
         postprocessor_obj.on_throw = "or_else"
         parsed_obj = postprocess_parser.process_action(postprocessor_obj)
         assert parsed_obj["on_throw"].value == OnThrowValue.OrElse.value
