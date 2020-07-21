@@ -35,6 +35,13 @@ def preprocess_definition():
                     "or_else": {},
                     "on_throw": "throw",
                 },
+                "03_silly_name": {
+                    "input_paths": ["fields.title.title", "fields.last_name"],
+                    "output_path": "fields.silly_name",
+                    "function": "concat",
+                    "or_else": {},
+                    "on_throw": "throw",
+                },
             }
         }
     )
@@ -68,8 +75,12 @@ class TestPreprocessMapper:
         result = mapper(blob)
         assert result.fields.full_name == "Heracles"
 
-    def test_functions_are_applied_in_alphanumeric_order(self):
-        pass
+    def test_functions_are_applied_in_alphanumeric_order(
+        self, preprocess_definition, functions, definitions, blob
+    ):
+        mapper = PreprocessMapper(preprocess_definition, functions, definitions)
+        result = mapper(blob)
+        assert result.fields.silly_name == "foocles"
 
     def test_or_else_correctly_sets_value(self):
         pass
