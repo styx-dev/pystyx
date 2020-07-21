@@ -6,7 +6,7 @@ with open("README.md", "r") as fh:
 setuptools.setup(
     name="pystyx",
     version="0.1.0",
-    scripts=["pystyx"],
+    scripts=[],
     author="Mark Keaton",
     author_email="mkeaton@gmail.com",
     description="Python Styx bindings for ETL/ELT declarative mapping syntax using TOML.",

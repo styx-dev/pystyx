@@ -5,3 +5,7 @@ __pycache__/
 
 blob.json
 maps/
+
+build/
+dist/
+pystyx.egg-info/
