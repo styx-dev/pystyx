@@ -57,7 +57,7 @@ class toml_function:
 
     def __init__(self, function: Callable):
         self.function = function
-        function_name = _to_camel_case(function.__name__)
+        function_name = function.__name__
         if function_name in TomlFunction._functions:
             raise RuntimeError(
                 f"Duplicate name found in toml_functions: {function_name}"

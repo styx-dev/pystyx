@@ -29,7 +29,7 @@ class ProcessMapper:
         That is, preprocess prepares the from_obj for processing.
         Postprocess polishes the to_obj for final export.
         """
-        if hasattr(self.definition, self.processor_key):
+        if self.definition.get(self.processor_key):
             process_dict = getattr(self.definition, self.processor_key)
             processors = sorted(
                 [(key, value) for key, value in process_dict.items()],
@@ -124,8 +124,7 @@ class Mapper:
 
     def __init__(self, toml_map, functions, definitions=None):
         self.raw_map = toml_map
-        self.definition = self.parse_definition(self.raw_map)
-        self.type = self.definition.type
+        (self.type, self.definition) = self.parse_definition(self.raw_map)
         self.definitions = definitions if definitions is not None else {}
         self.functions = functions
 

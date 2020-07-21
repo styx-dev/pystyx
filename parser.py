@@ -28,31 +28,36 @@ def parse_on_throw(from_obj, to_obj):
 class ProcessParser:
     def process(self, process):
         process_obj = Munch()
-        if isinstance(process.input_paths, list) and all(
-            isinstance(element, str) for element in process.input_paths
+        for action_name, action in process.items():
+            process_obj[action_name] = self.process_action(action)
+
+    def process_action(self, action):
+        action_obj = Munch()
+        if isinstance(action.input_paths, list) and all(
+            isinstance(element, str) for element in action.input_paths
         ):
-            process_obj.input_paths = process.input_paths
+            action_obj.input_paths = action.input_paths
         else:
             raise TypeError("input_paths must be a list of strings.")
 
-        if isinstance(process.output_path, str):
-            process_obj.output_path = process.output_path
+        if isinstance(action.output_path, str):
+            action_obj.output_path = action.output_path
         else:
             raise TypeError("output_path must be a string.")
 
-        if process.function in TomlFunction._functions:
-            process_obj.function = process.function
+        if action.function in TomlFunction._functions:
+            action_obj.function = action.function
         else:
-            raise TypeError(f"unknown function: {process.function}")
+            raise TypeError(f"unknown function: {action.function}")
 
-        if process.get("or_else"):
-            process_obj.or_else = process.or_else
+        if action.get("or_else"):
+            action_obj.or_else = action.or_else
 
-        if process.get("on_throw"):
-            throw_action = parse_on_throw(process, process_obj)
-            process_obj.on_throw = throw_action
+        if action.get("on_throw"):
+            throw_action = parse_on_throw(action, action_obj)
+            action_obj.on_throw = throw_action
 
-        return process_obj
+        return action_obj
 
 
 class PreprocessParser(ProcessParser):
@@ -116,27 +121,36 @@ class FieldsParser:
             )
 
         if hasattr(field, "input_paths"):
-            if isinstance(field.input_paths, list) and all(
-                isinstance(element, str) for element in field.input_paths
-            ):
-                field_obj.input_paths = field.input_paths
-
-            else:
-                raise TypeError("input_paths must be a list of strings.")
+            field_obj.input_paths = self.parse_input_paths(field)
         else:
-            if isinstance(field.possible_paths, list) and all(
-                isinstance(element, str) for element in field.possible_paths
-            ):
-                if not field.get("path_condition"):
-                    raise TypeError(
-                        "'path_condition' must be set if 'possible_paths' is set."
-                    )
-                field_obj.possible_paths = field.possible_paths
-
-            else:
-                raise TypeError("possible_paths must be a list of strings.")
+            field_obj.possible_paths = self.parse_possible_paths(field)
 
         return field_obj
+
+    def parse_input_paths(self, field):
+        if isinstance(field.input_paths, list) and all(
+            isinstance(element, str) for element in field.input_paths
+        ):
+            if len(field.input_paths) > 1 and not field.get("function"):
+                raise TypeError(
+                    "'input_paths' must be of length 1 if 'function' is not defined"
+                )
+            return field.input_paths
+        else:
+            raise TypeError("input_paths must be a list of strings.")
+
+    def parse_possible_paths(self, field):
+        if isinstance(field.possible_paths, list) and all(
+            isinstance(element, str) for element in field.possible_paths
+        ):
+            if not field.get("path_condition"):
+                raise TypeError(
+                    "'path_condition' must be set if 'possible_paths' is set."
+                )
+            return field.possible_paths
+
+        else:
+            raise TypeError("possible_paths must be a list of strings.")
 
     def parse_extra_fields(self, field_name, field, field_obj):
         """
@@ -144,12 +158,18 @@ class FieldsParser:
 
         For now, the only allowed non-reserved keyword is the parent's field_name
         """
+        type_ = field.get("type")
         for key, value in field.items():
             if key in self.reserved_words:
                 continue
 
             if key != field_name:
                 raise TypeError(f"Unknown key found on field definition: {field_name}")
+
+            if not type_:
+                raise TypeError(
+                    "Custom values cannot be set on a definition without declaring a nested object type"
+                )
 
             field_obj[key] = value
 
@@ -158,6 +178,10 @@ class FieldsParser:
 
 class Parser:
     def parse(self, toml_obj: Munch):
+        if not hasattr(toml_obj, "type"):
+            raise TypeError("'type' must be declared at the top-level.")
+        type_ = toml_obj.type
+
         parsed_obj = Munch()
         if toml_obj.get("preprocess"):
             parser = PreprocessParser()
@@ -167,9 +191,10 @@ class Parser:
             raise TypeError(
                 "'fields' is a required field for a Styx definition mapping."
             )
-        parsed_obj["fields"] = self.parse_fields(toml_obj.fields)
+        fields_parser = FieldsParser()
+        parsed_obj["fields"] = fields_parser.parse(toml_obj.fields)
 
         if toml_obj.get("postprocess"):
             parser = PostprocessParser()
             parsed_obj["postprocess"] = parser.parse(toml_obj.postprocess)
-        return parsed_obj
+        return type_, parsed_obj

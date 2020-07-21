@@ -20,7 +20,7 @@ def create_maps(
 ) -> Dict[str, Mapper]:
     cwd = get_cwd()
     styx_files: Generator[Path] = cwd.glob(f"{maps_location}/*.styx")
-    functions_file: Path = cwd.path(functions_location)
+    functions_file: Path = cwd / functions_location
     functions_toml = (
         munchify(toml.load(functions_file)) if functions_file.exists() else None
     )

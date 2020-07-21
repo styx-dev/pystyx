@@ -113,63 +113,63 @@ class TestFunctions:
 
 class TestPreprocess:
     def test_parses_input_paths_successfully(self, preprocess_parser, preprocessor_obj):
-        parsed_obj = preprocess_parser.parse(preprocessor_obj)
+        parsed_obj = preprocess_parser.process_action(preprocessor_obj)
         assert parsed_obj["input_paths"] == preprocessor_obj.input_paths
 
     def test_missing_input_paths_raises(self, preprocess_parser, preprocessor_obj):
         del preprocessor_obj.input_paths
         with pytest.raises(AttributeError):
-            preprocess_parser.parse(preprocessor_obj)
+            preprocess_parser.process_action(preprocessor_obj)
 
     def test_nonlist_input_paths_raises(self, preprocess_parser, preprocessor_obj):
         preprocessor_obj.input_paths = 0
         with pytest.raises(TypeError, match="must be a list of strings"):
-            preprocess_parser.parse(preprocessor_obj)
+            preprocess_parser.process_action(preprocessor_obj)
 
     def test_nonlist_of_strings_input_paths_raises(
         self, preprocess_parser, preprocessor_obj
     ):
         preprocessor_obj.input_paths = [0]
         with pytest.raises(TypeError, match="must be a list of strings"):
-            preprocess_parser.parse(preprocessor_obj)
+            preprocess_parser.process_action(preprocessor_obj)
 
     def test_parses_output_path_successfully(self, preprocess_parser, preprocessor_obj):
-        parsed_obj = preprocess_parser.parse(preprocessor_obj)
+        parsed_obj = preprocess_parser.process_action(preprocessor_obj)
         assert parsed_obj["output_path"] == preprocessor_obj.output_path
 
     def test_missing_output_path_raises(self, preprocess_parser, preprocessor_obj):
         del preprocessor_obj.output_path
         with pytest.raises(AttributeError):
-            preprocess_parser.parse(preprocessor_obj)
+            preprocess_parser.process_action(preprocessor_obj)
 
     def test_nonstring_output_path_raises(self, preprocess_parser, preprocessor_obj):
         preprocessor_obj.output_path = 0
         with pytest.raises(TypeError):
-            preprocess_parser.parse(preprocessor_obj)
+            preprocess_parser.process_action(preprocessor_obj)
 
     def test_parse_function_successfully(self, preprocess_parser, preprocessor_obj):
-        parsed_obj = preprocess_parser.parse(preprocessor_obj)
+        parsed_obj = preprocess_parser.process_action(preprocessor_obj)
         assert parsed_obj["function"] == preprocessor_obj.function
 
     def test_unknown_function_raises(self, preprocess_parser, preprocessor_obj):
         preprocessor_obj.function = "unknown"
         with pytest.raises(TypeError):
-            preprocess_parser.parse(preprocessor_obj)
+            preprocess_parser.process_action(preprocessor_obj)
 
     def test_on_throw_parses_valid_enums(self, preprocess_parser, preprocessor_obj):
         from ..shared import OnThrowValue
 
-        parsed_obj = preprocess_parser.parse(preprocessor_obj)
+        parsed_obj = preprocess_parser.process_action(preprocessor_obj)
         assert parsed_obj["on_throw"].value == OnThrowValue.Throw.value
 
     def test_invalid_on_throw_raises(self, preprocess_parser, preprocessor_obj):
         preprocessor_obj.on_throw = "unknown"
         with pytest.raises(TypeError):
-            preprocess_parser.parse(preprocessor_obj)
+            preprocess_parser.process_action(preprocessor_obj)
 
     def test_optional_on_throw_skips(self, preprocess_parser, preprocessor_obj):
         del preprocessor_obj.on_throw
-        preprocess_parser.parse(preprocessor_obj)
+        preprocess_parser.process_action(preprocessor_obj)
 
     def test_on_throw_with_or_else_parses_or_else_successfully(
         self, preprocess_parser, preprocessor_obj
@@ -177,7 +177,7 @@ class TestPreprocess:
         from ..shared import OnThrowValue
 
         preprocessor_obj.on_throw = "or_else"
-        parsed_obj = preprocess_parser.parse(preprocessor_obj)
+        parsed_obj = preprocess_parser.process_action(preprocessor_obj)
         assert parsed_obj["on_throw"].value == OnThrowValue.OrElse.value
 
     def test_on_throw_with_or_else_missing_raises(
@@ -187,16 +187,21 @@ class TestPreprocess:
         del preprocessor_obj.or_else
 
         with pytest.raises(TypeError):
-            preprocess_parser.parse(preprocessor_obj)
+            preprocess_parser.process_action(preprocessor_obj)
 
     def test_optional_or_else_skips(self, preprocess_parser, preprocessor_obj):
         del preprocessor_obj.or_else
-        preprocess_parser.parse(preprocessor_obj)
+        preprocess_parser.process_action(preprocessor_obj)
 
 
 class TestFields:
-    def test_fields_is_required(self, parser, field_input_obj):
+    def test_type_is_required(self, parser, field_input_obj):
         obj = Munch()
+        with pytest.raises(TypeError, match="'type' must be declared at the top-level"):
+            parser.parse(obj)
+
+    def test_fields_is_required(self, parser, field_input_obj):
+        obj = munchify({"type": "foo"})
         with pytest.raises(TypeError, match="'fields' is a required field"):
             parser.parse(obj)
 
@@ -313,76 +318,98 @@ class TestFields:
 
     def test_unknown_non_nested_keys_raises(self, fields_parser, field_input_obj):
         field_obj = Munch()
+        field_input_obj["type"] = "Deity"
         field_input_obj["hades"] = "god of underworld"
         with pytest.raises(
-            TypeError, match=f"Unknown key found on field definition: zeus"
+            TypeError, match="Unknown key found on field definition: zeus"
         ):
             fields_parser.parse_extra_fields("zeus", field_input_obj, field_obj)
+
+    def test_custom_values_without_type_declared_raises(
+        self, fields_parser, field_input_obj
+    ):
+        field_obj = Munch()
+        field_input_obj["hades"] = "god of underworld"
+        with pytest.raises(
+            TypeError,
+            match="Custom values cannot be set on a definition without declaring a nested object type",
+        ):
+            fields_parser.parse_extra_fields("hades", field_input_obj, field_obj)
+
+    def test_input_paths_length_greater_than_one_not_allowed_if_function_not_defined(
+        self, fields_parser, field_input_obj
+    ):
+        if hasattr(field_input_obj, "function"):
+            del field_input_obj.function
+
+        field_input_obj.input_paths = ["foo", "bar"]
+        with pytest.raises(TypeError, match="'input_paths' must be of length 1"):
+            fields_parser.parse_field(field_input_obj)
 
 
 class TestPostprocess:
     def test_parses_input_paths_successfully(
         self, postprocess_parser, postprocessor_obj
     ):
-        parsed_obj = postprocess_parser.parse(postprocessor_obj)
+        parsed_obj = postprocess_parser.process_action(postprocessor_obj)
         assert parsed_obj["input_paths"] == postprocessor_obj.input_paths
 
     def test_missing_input_paths_raises(self, postprocess_parser, postprocessor_obj):
         del postprocessor_obj.input_paths
         with pytest.raises(AttributeError):
-            postprocess_parser.parse(postprocessor_obj)
+            postprocess_parser.process_action(postprocessor_obj)
 
     def test_nonlist_input_paths_raises(self, postprocess_parser, postprocessor_obj):
         postprocessor_obj.input_paths = 0
         with pytest.raises(TypeError, match="must be a list of strings"):
-            postprocess_parser.parse(postprocessor_obj)
+            postprocess_parser.process_action(postprocessor_obj)
 
     def test_nonlist_of_strings_input_paths_raises(
         self, postprocess_parser, postprocessor_obj
     ):
         postprocessor_obj.input_paths = [0]
         with pytest.raises(TypeError, match="must be a list of strings"):
-            postprocess_parser.parse(postprocessor_obj)
+            postprocess_parser.process_action(postprocessor_obj)
 
     def test_parses_output_path_successfully(
         self, postprocess_parser, postprocessor_obj
     ):
-        parsed_obj = postprocess_parser.parse(postprocessor_obj)
+        parsed_obj = postprocess_parser.process_action(postprocessor_obj)
         assert parsed_obj["output_path"] == postprocessor_obj.output_path
 
     def test_missing_output_path_raises(self, postprocess_parser, postprocessor_obj):
         del postprocessor_obj.output_path
         with pytest.raises(AttributeError):
-            postprocess_parser.parse(postprocessor_obj)
+            postprocess_parser.process_action(postprocessor_obj)
 
     def test_nonstring_output_path_raises(self, postprocess_parser, postprocessor_obj):
         postprocessor_obj.output_path = 0
         with pytest.raises(TypeError):
-            postprocess_parser.parse(postprocessor_obj)
+            postprocess_parser.process_action(postprocessor_obj)
 
     def test_parse_function_successfully(self, postprocess_parser, postprocessor_obj):
-        parsed_obj = postprocess_parser.parse(postprocessor_obj)
+        parsed_obj = postprocess_parser.process_action(postprocessor_obj)
         assert parsed_obj["function"] == postprocessor_obj.function
 
     def test_unknown_function_raises(self, postprocess_parser, postprocessor_obj):
         postprocessor_obj.function = "unknown"
         with pytest.raises(TypeError):
-            postprocess_parser.parse(postprocessor_obj)
+            postprocess_parser.process_action(postprocessor_obj)
 
     def test_on_throw_parses_valid_enums(self, postprocess_parser, postprocessor_obj):
         from ..shared import OnThrowValue
 
-        parsed_obj = postprocess_parser.parse(postprocessor_obj)
+        parsed_obj = postprocess_parser.process_action(postprocessor_obj)
         assert parsed_obj["on_throw"].value == OnThrowValue.Throw.value
 
     def test_invalid_on_throw_raises(self, postprocess_parser, postprocessor_obj):
         postprocessor_obj.on_throw = "unknown"
         with pytest.raises(TypeError):
-            postprocess_parser.parse(postprocessor_obj)
+            postprocess_parser.process_action(postprocessor_obj)
 
     def test_optional_on_throw_skips(self, postprocess_parser, postprocessor_obj):
         del postprocessor_obj.on_throw
-        postprocess_parser.parse(postprocessor_obj)
+        postprocess_parser.process_action(postprocessor_obj)
 
     def test_on_throw_with_or_else_parses_or_else_successfully(
         self, postprocess_parser, postprocessor_obj
@@ -390,7 +417,7 @@ class TestPostprocess:
         from ..shared import OnThrowValue
 
         postprocessor_obj.on_throw = "or_else"
-        parsed_obj = postprocess_parser.parse(postprocessor_obj)
+        parsed_obj = postprocess_parser.process_action(postprocessor_obj)
         assert parsed_obj["on_throw"].value == OnThrowValue.OrElse.value
 
     def test_on_throw_with_or_else_missing_raises(
@@ -400,8 +427,8 @@ class TestPostprocess:
         del postprocessor_obj.or_else
 
         with pytest.raises(TypeError):
-            postprocess_parser.parse(postprocessor_obj)
+            postprocess_parser.process_action(postprocessor_obj)
 
     def test_optional_or_else_skips(self, postprocess_parser, postprocessor_obj):
         del postprocessor_obj.or_else
-        postprocess_parser.parse(postprocessor_obj)
+        postprocess_parser.process_action(postprocessor_obj)
