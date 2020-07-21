@@ -6,6 +6,10 @@ from ..functions import parse_json
 from ..mapper import PreprocessMapper, PostprocessMapper, FieldsMapper
 
 
+def throw(msg):
+    raise Exception(msg)
+
+
 @pytest.fixture
 def definitions():
     return munchify({})
@@ -13,7 +17,13 @@ def definitions():
 
 @pytest.fixture
 def functions():
-    return munchify({"parse_json": parse_json, "concat": lambda a, b: a + b})
+    return munchify(
+        {
+            "parse_json": parse_json,
+            "concat": lambda a, b: a + b,
+            "throw": lambda: throw("I threw up."),
+        }
+    )
 
 
 @pytest.fixture
@@ -47,6 +57,12 @@ def preprocess_definition():
                     "output_path": "fields.animal",
                     "function": "parse_json",
                     "or_else": '"cat"',
+                },
+                "05_try_best_cake": {
+                    "input_paths": ["fields.worlds.best_cake"],
+                    "output_path": "fields.cake",
+                    "function": "throw",
+                    "on_throw": "skip",
                 },
             }
         }
@@ -95,8 +111,12 @@ class TestPreprocessMapper:
         result = mapper(blob)
         assert result.fields.animal == "cat"
 
-    def test_on_throw_skip_enum(self):
-        pass
+    def test_on_throw_skip_enum(
+        self, preprocess_definition, functions, definitions, blob
+    ):
+        mapper = PreprocessMapper(preprocess_definition, functions, definitions)
+        result = mapper(blob)
+        assert result.fields.get("cake") is None
 
     def test_on_throw_or_else_enum(self):
         pass
