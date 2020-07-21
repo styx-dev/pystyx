@@ -45,10 +45,9 @@ class ProcessMapper:
                     )
                     for path in processor.input_paths
                 )
-                func = self.functions[processor.function]
 
                 try:
-                    new_value = func(*old_values)
+                    new_value = processor.function(*old_values)
                 except Exception as exc:
                     (new_value, skip) = self.handle_exception(processor, exc)
                     if skip:
@@ -121,10 +120,11 @@ class FieldsMapper:
                     "Unable to determine input path. Unable to find option satisfying predicate."
                 )
 
-            value = potential_values[0]
+            value = self.apply_function_to_values(
+                field_definition, iter(potential_values)
+            )
         else:
-            # TODO: Implement function
-            value = get(from_obj, field_definition.input_paths[0])
+            value = self.apply_function(field_definition, from_obj)
 
         if field_definition.get("type"):
             value = self.map_nested_type(field_name, field_definition, from_obj, value)
@@ -150,6 +150,19 @@ class FieldsMapper:
             value[key] = get(from_obj, path)
 
         return value
+
+    def apply_function(self, field_definition, from_obj):
+        or_else = (
+            field_definition.or_else if hasattr(field_definition, "or_else") else None
+        )
+        values = (get(from_obj, path, or_else) for path in field_definition.input_paths)
+        return self.apply_function_to_values(field_definition, values)
+
+    def apply_function_to_values(self, field_definition, values):
+        if field_definition.get("function"):
+            return field_definition.function(*values)
+        else:
+            return next(values)
 
 
 class Mapper:

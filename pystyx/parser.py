@@ -47,7 +47,7 @@ class ProcessParser:
             raise TypeError("output_path must be a string.")
 
         if action.function in TomlFunction._functions:
-            action_obj.function = action.function
+            action_obj.function = TomlFunction._functions[action.function]
         else:
             raise TypeError(f"unknown function: {action.function}")
 
@@ -111,6 +111,12 @@ class FieldsParser:
         if field.get("type"):
             # TODO: Is it possible to check valid definitions during parse?
             field_obj.type = field.type
+
+        if field.get("function"):
+            if field.function in TomlFunction._functions:
+                field_obj.function = TomlFunction._functions[field.function]
+            else:
+                raise TypeError(f"unknown function: {field.function}")
 
         return field_obj
 
