@@ -4,6 +4,7 @@ from munch import Munch, munchify
 from pydash import get, set_
 
 from .parser import Parser
+from .shared import OnThrowValue
 
 
 def empty_functions_toml():
@@ -45,10 +46,26 @@ class ProcessMapper:
                     )
                     for path in processor.input_paths
                 )
-                new_value = func(*old_values)
+
+                try:
+                    new_value = func(*old_values)
+                except Exception as exc:
+                    (new_value, skip) = self.handle_exception(processor, exc)
+                    if skip:
+                        continue
+
                 set_(obj, processor.output_path, new_value)
 
         return obj
+
+    def handle_exception(self, processor, exc):
+        on_throw_enum = processor.get("on_throw")
+        if on_throw_enum == OnThrowValue.Skip.value:
+            return None, True
+        elif on_throw_enum == OnThrowValue.OrElse.value:
+            return processor.or_else, False
+        else:
+            raise exc
 
 
 class PreprocessMapper(ProcessMapper):
