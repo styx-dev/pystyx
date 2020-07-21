@@ -27,7 +27,14 @@ def preprocess_definition():
                     "function": "parse_json",
                     "or_else": {},
                     "on_throw": "throw",
-                }
+                },
+                "02_concat_name": {
+                    "input_paths": ["fields.first_name", "fields.last_name"],
+                    "output_path": "fields.full_name",
+                    "function": "concat",
+                    "or_else": {},
+                    "on_throw": "throw",
+                },
             }
         }
     )
@@ -35,7 +42,15 @@ def preprocess_definition():
 
 @pytest.fixture
 def blob():
-    return munchify({"fields": {"nested": {"title": '{"title": "foo"}'}}})
+    return munchify(
+        {
+            "fields": {
+                "nested": {"title": '{"title": "foo"}',},
+                "first_name": "Hera",
+                "last_name": "cles",
+            }
+        }
+    )
 
 
 class TestPreprocessMapper:
@@ -46,8 +61,12 @@ class TestPreprocessMapper:
         result = mapper(blob)
         assert result.fields.title == munchify({"title": "foo"})
 
-    def test_multiple_argument_function(self):
-        pass
+    def test_multiple_argument_function(
+        self, preprocess_definition, functions, definitions, blob
+    ):
+        mapper = PreprocessMapper(preprocess_definition, functions, definitions)
+        result = mapper(blob)
+        assert result.fields.full_name == "Heracles"
 
     def test_functions_are_applied_in_alphanumeric_order(self):
         pass
