@@ -19,4 +19,5 @@ setuptools.setup(
         "License :: OSI Approved :: MIT License",
         "Operating System :: OS Independent",
     ],
+    setup_requires=["munch>=2.5.0", "pydash>=4.8.0"],
 )
