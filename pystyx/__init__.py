@@ -1,4 +1,3 @@
-import json
 import os
 from pathlib import Path
 from typing import Dict, Generator
@@ -6,10 +5,10 @@ from typing import Dict, Generator
 import toml
 from munch import munchify
 
-from .functions import TomlFunction
+from .functions import TomlFunction, styx_function
 from .mapper import Mapper
 
-__all__ = ["create_maps"]
+__all__ = ["create_maps", "styx_function"]
 
 
 def empty_functions():

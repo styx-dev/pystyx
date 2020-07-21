@@ -51,7 +51,7 @@ class TomlFunction:
             raise TypeError("functions.styx was malformed. No 'functions' list found.")
 
 
-class toml_function:
+class styx_function:
     function: Callable
     _functions = {}
 
@@ -68,11 +68,11 @@ class toml_function:
         return self.function(*args, **kwargs)
 
 
-@toml_function
+@styx_function
 def to_camel_case(snake_str):
     return _to_camel_case(snake_str)
 
 
-@toml_function
+@styx_function
 def parse_json(s):
     return munchify(json.loads(s))
