@@ -41,7 +41,7 @@ class TomlFunction:
 
     @staticmethod
     def parse_functions(functions_toml):
-        if functions_toml.get("functions"):
+        if hasattr(functions_toml, "functions"):
             if not isinstance(functions_toml.functions, list):
                 raise TypeError(
                     "functions.styx was malformed. 'functions' key must be a list."

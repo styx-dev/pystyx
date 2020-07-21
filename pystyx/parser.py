@@ -193,6 +193,8 @@ class Parser:
         type_ = toml_obj.type
 
         parsed_obj = Munch()
+        parsed_obj.type = type_
+
         if toml_obj.get("preprocess"):
             parser = PreprocessParser()
             parsed_obj["preprocess"] = parser.parse(toml_obj.preprocess)

@@ -187,6 +187,12 @@ class Mapper:
         to_obj = self.postprocessMapper(to_obj)
         return to_obj
 
+    def __str__(self):
+        return f"{self.definition.type}Mapper"
+
+    def __repr__(self):
+        return self.__str__()
+
     def parse_definition(self, toml_map: Munch) -> Munch:
         parser = Parser()
         return parser.parse(toml_map)
