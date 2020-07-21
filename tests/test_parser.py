@@ -346,6 +346,11 @@ class TestFields:
         with pytest.raises(TypeError, match="'input_paths' must be of length 1"):
             fields_parser.parse_field(field_input_obj)
 
+    def test_extended_field_keys_get_copied_to_private_field_copy_fields(
+        self, fields_parser, field_input_obj
+    ):
+        pass
+
 
 class TestPostprocess:
     def test_parses_input_paths_successfully(

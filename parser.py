@@ -30,6 +30,7 @@ class ProcessParser:
         process_obj = Munch()
         for action_name, action in process.items():
             process_obj[action_name] = self.process_action(action)
+        return process_obj
 
     def process_action(self, action):
         action_obj = Munch()
@@ -107,6 +108,10 @@ class FieldsParser:
             throw_action = parse_on_throw(field, field_obj)
             field_obj.on_throw = throw_action
 
+        if field.get("type"):
+            # TODO: Is it possible to check valid definitions during parse?
+            field_obj.type = field.type
+
         return field_obj
 
     def parse_paths(self, field, field_obj):
@@ -124,6 +129,7 @@ class FieldsParser:
             field_obj.input_paths = self.parse_input_paths(field)
         else:
             field_obj.possible_paths = self.parse_possible_paths(field)
+            field_obj.path_condition = field.path_condition
 
         return field_obj
 
@@ -159,6 +165,8 @@ class FieldsParser:
         For now, the only allowed non-reserved keyword is the parent's field_name
         """
         type_ = field.get("type")
+        field_obj["_copy_fields"] = []
+
         for key, value in field.items():
             if key in self.reserved_words:
                 continue
@@ -172,6 +180,8 @@ class FieldsParser:
                 )
 
             field_obj[key] = value
+            for nested_key in value:
+                field_obj["_copy_fields"].append(nested_key)
 
         return field_obj
 

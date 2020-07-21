@@ -36,15 +36,19 @@ class ProcessMapper:
                 key=lambda pair: pair[0],
             )
             for (_key, processor) in processors:
-                func = self.functions[processor.transform]
-                old_value = get(
-                    obj,
-                    processor.path,
-                    processor.or_else if processor.or_else else None,
+                func = self.functions[processor.function]
+                old_values = (
+                    get(
+                        obj,
+                        path,
+                        processor.or_else if hasattr(processor, "or_else") else None,
+                    )
+                    for path in processor.input_paths
                 )
-                new_value = func(old_value)
-                set_(obj, processor.path, new_value)
-            return obj
+                new_value = func(*old_values)
+                set_(obj, processor.output_path, new_value)
+
+        return obj
 
 
 class PreprocessMapper(ProcessMapper):
@@ -57,7 +61,7 @@ class PostprocessMapper(ProcessMapper):
 
 class FieldsMapper:
     definition: Munch
-    definitions: Dict[str, Munch]
+    definitions: Dict[str, "Mapper"]
     functions: Dict[str, Callable]
 
     def __init__(self, definition, functions, definitions):
@@ -74,17 +78,16 @@ class FieldsMapper:
         return to_obj
 
     def map_field(self, from_obj, to_obj, field_name, field_definition):
-        value = self.get_field_value(from_obj, field_definition)
+        value = self.get_field_value(field_name, from_obj, field_definition)
         set_(to_obj, field_name, value)
         return to_obj
 
-    def get_field_value(self, from_obj, field_definition):
+    def get_field_value(self, field_name, from_obj, field_definition):
         if field_definition.get("possible_paths"):
             options = [
-                get(from_obj, path, None)
-                for path in field_definition.input_path_options
+                get(from_obj, path, None) for path in field_definition.possible_paths
             ]
-            condition = field_definition.options_condition
+            condition = field_definition.path_condition
             potential_values = list(
                 filter(
                     lambda val: get(val, condition.field) == condition.value, options,
@@ -103,9 +106,32 @@ class FieldsMapper:
 
             value = potential_values[0]
         else:
-            value = get(from_obj, field_definition.input_path)
+            # TODO: Implement function
+            value = get(from_obj, field_definition.input_paths[0])
 
-        # TODO: Pass off Foreign key to other TOML Object (Address) for handling
+        if field_definition.get("type"):
+            value = self.map_nested_type(field_name, field_definition, from_obj, value)
+
+        return value
+
+    def map_nested_type(self, field_name, field_definition, from_obj, value):
+        nested_mapper = self.definitions.get(field_definition.type)
+        if not nested_mapper:
+            raise RuntimeError(
+                f"Unable to map nested object. Unknown type: {field_definition.type}"
+            )
+
+        extended_value = self.copy_fields(field_name, field_definition, from_obj, value)
+        return nested_mapper(extended_value)
+
+    def copy_fields(self, field_name, field_definition, from_obj, value):
+        """
+        Non-reserved words are used to copy extra data to the nested object for mapping
+        """
+        for key in field_definition._copy_fields:
+            path = get(field_definition, [field_name, key])
+            value[key] = get(from_obj, path)
+
         return value
 
 
@@ -147,3 +173,12 @@ class Mapper:
     def parse_definition(self, toml_map: Munch) -> Munch:
         parser = Parser()
         return parser.parse(toml_map)
+
+    def update_definitions(self, definitions):
+        """
+        Mutation. Sets definitions after creating all of them instead of using a global variable
+        """
+        self.definitions = definitions
+        self.preprocessMapper.definitions = definitions
+        self.fieldsMapper.definitions = definitions
+        self.postprocessMapper.definitions = definitions
