@@ -37,7 +37,6 @@ class ProcessMapper:
                 key=lambda pair: pair[0],
             )
             for (_key, processor) in processors:
-                func = self.functions[processor.function]
                 old_values = (
                     get(
                         obj,
@@ -46,6 +45,7 @@ class ProcessMapper:
                     )
                     for path in processor.input_paths
                 )
+                func = self.functions[processor.function]
 
                 try:
                     new_value = func(*old_values)

@@ -42,6 +42,12 @@ def preprocess_definition():
                     "or_else": {},
                     "on_throw": "throw",
                 },
+                "04_get_best_pet": {
+                    "input_paths": ["fields.worlds_best_animal"],
+                    "output_path": "fields.animal",
+                    "function": "parse_json",
+                    "or_else": '"cat"',
+                },
             }
         }
     )
@@ -82,8 +88,12 @@ class TestPreprocessMapper:
         result = mapper(blob)
         assert result.fields.silly_name == "foocles"
 
-    def test_or_else_correctly_sets_value(self):
-        pass
+    def test_or_else_correctly_sets_value(
+        self, preprocess_definition, functions, definitions, blob
+    ):
+        mapper = PreprocessMapper(preprocess_definition, functions, definitions)
+        result = mapper(blob)
+        assert result.fields.animal == "cat"
 
     def test_on_throw_skip_enum(self):
         pass
