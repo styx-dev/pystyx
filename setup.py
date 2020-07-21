@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="pystyx",
-    version="0.2.0",
+    version="0.3.0",
     scripts=[],
     author="Mark Keaton",
     author_email="mkeaton@gmail.com",
@@ -13,7 +13,7 @@ setuptools.setup(
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/styx-dev/pystyx",
-    packages=setuptools.find_packages(),
+    packages=setuptools.find_packages(exclude=["tests", "maps"]),
     classifiers=[
         "Programming Language :: Python :: 3",
         "License :: OSI Approved :: MIT License",

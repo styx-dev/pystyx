@@ -76,3 +76,8 @@ def to_camel_case(snake_str):
 @styx_function
 def parse_json(s):
     return munchify(json.loads(s))
+
+
+@styx_function
+def parse_bool(s):
+    return s.lower() in ("true", "1", "t", "y", "yes")

@@ -1,4 +1,5 @@
 functions = [
     "parse_json",
-    "to_camel_case"
+    "to_camel_case",
+    "parse_bool"
 ]
