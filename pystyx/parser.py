@@ -101,7 +101,7 @@ class FieldsParser:
 
         field_obj = self.parse_paths(field, field_obj)
 
-        if field.get("or_else"):
+        if hasattr(field, "or_else"):
             field_obj.or_else = field.or_else
 
         if field.get("on_throw"):
