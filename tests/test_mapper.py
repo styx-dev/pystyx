@@ -4,6 +4,7 @@ from munch import Munch, munchify
 
 from ..functions import parse_json
 from ..mapper import PreprocessMapper, PostprocessMapper, FieldsMapper
+from ..shared import OnThrowValue
 
 
 def throw(msg):
@@ -21,7 +22,7 @@ def functions():
         {
             "parse_json": parse_json,
             "concat": lambda a, b: a + b,
-            "throw": lambda: throw("I threw up."),
+            "throw": lambda *args: throw("I threw up."),
         }
     )
 
@@ -36,21 +37,21 @@ def preprocess_definition():
                     "output_path": "fields.title",
                     "function": "parse_json",
                     "or_else": {},
-                    "on_throw": "throw",
+                    "on_throw": OnThrowValue.Throw,
                 },
                 "02_concat_name": {
                     "input_paths": ["fields.first_name", "fields.last_name"],
                     "output_path": "fields.full_name",
                     "function": "concat",
                     "or_else": {},
-                    "on_throw": "throw",
+                    "on_throw": OnThrowValue.Throw,
                 },
                 "03_silly_name": {
                     "input_paths": ["fields.title.title", "fields.last_name"],
                     "output_path": "fields.silly_name",
                     "function": "concat",
                     "or_else": {},
-                    "on_throw": "throw",
+                    "on_throw": OnThrowValue.Throw,
                 },
                 "04_get_best_pet": {
                     "input_paths": ["fields.worlds_best_animal"],
@@ -62,7 +63,14 @@ def preprocess_definition():
                     "input_paths": ["fields.worlds.best_cake"],
                     "output_path": "fields.cake",
                     "function": "throw",
-                    "on_throw": "skip",
+                    "on_throw": OnThrowValue.Skip,
+                },
+                "06_try_get_country": {
+                    "input_paths": ["fields.current_country"],
+                    "output_path": "fields.country",
+                    "function": "throw",
+                    "or_else": "Greece",
+                    "on_throw": OnThrowValue.OrElse,
                 },
             }
         }
@@ -118,8 +126,12 @@ class TestPreprocessMapper:
         result = mapper(blob)
         assert result.fields.get("cake") is None
 
-    def test_on_throw_or_else_enum(self):
-        pass
+    def test_on_throw_or_else_enum(
+        self, preprocess_definition, functions, definitions, blob
+    ):
+        mapper = PreprocessMapper(preprocess_definition, functions, definitions)
+        result = mapper(blob)
+        assert result.fields.country == "Greece"
 
     def test_on_throw_raise_enum(self):
         pass

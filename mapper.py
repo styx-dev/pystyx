@@ -60,9 +60,9 @@ class ProcessMapper:
 
     def handle_exception(self, processor, exc):
         on_throw_enum = processor.get("on_throw")
-        if on_throw_enum == OnThrowValue.Skip.value:
+        if on_throw_enum.value == OnThrowValue.Skip.value:
             return None, True
-        elif on_throw_enum == OnThrowValue.OrElse.value:
+        elif on_throw_enum.value == OnThrowValue.OrElse.value:
             return processor.or_else, False
         else:
             raise exc
