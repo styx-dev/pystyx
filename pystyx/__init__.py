@@ -29,7 +29,7 @@ def create_maps(
     functions = TomlFunction.parse_functions(functions_toml)
     map_objects = (munchify(toml.load(path)) for path in styx_files)
     mappers = (Mapper(map_, functions) for map_ in map_objects)
-    maps = {mapper.type: mapper for mapper in mappers}
+    maps = {mapper.from_type: mapper for mapper in mappers}
     # Mutation. Add "definitions" to Mappers
     for map_ in maps.values():
         map_.update_definitions(maps)
