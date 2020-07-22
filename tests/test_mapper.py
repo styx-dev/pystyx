@@ -7,8 +7,12 @@ from pystyx.mapper import PreprocessMapper, PostprocessMapper, FieldsMapper
 from pystyx.shared import OnThrowValue
 
 
-def throw(msg):
-    raise Exception(msg)
+def throw(*args):
+    raise Exception("I threw up")
+
+
+def concat(a, b):
+    return a + b
 
 
 @pytest.fixture
@@ -18,13 +22,7 @@ def definitions():
 
 @pytest.fixture
 def functions():
-    return munchify(
-        {
-            "parse_json": parse_json,
-            "concat": lambda a, b: a + b,
-            "throw": lambda *args: throw("I threw up."),
-        }
-    )
+    return munchify({"parse_json": parse_json, "concat": concat, "throw": throw})
 
 
 @pytest.fixture
@@ -35,40 +33,40 @@ def preprocess_definition():
                 "01_parse_title": {
                     "input_paths": ["fields.nested.title"],
                     "output_path": "fields.title",
-                    "function": "parse_json",
+                    "function": parse_json,
                     "or_else": {},
                     "on_throw": OnThrowValue.Throw,
                 },
                 "02_concat_name": {
                     "input_paths": ["fields.first_name", "fields.last_name"],
                     "output_path": "fields.full_name",
-                    "function": "concat",
+                    "function": concat,
                     "or_else": {},
                     "on_throw": OnThrowValue.Throw,
                 },
                 "03_silly_name": {
                     "input_paths": ["fields.title.title", "fields.last_name"],
                     "output_path": "fields.silly_name",
-                    "function": "concat",
+                    "function": concat,
                     "or_else": {},
                     "on_throw": OnThrowValue.Throw,
                 },
                 "04_get_best_pet": {
                     "input_paths": ["fields.worlds_best_animal"],
                     "output_path": "fields.animal",
-                    "function": "parse_json",
+                    "function": parse_json,
                     "or_else": '"cat"',
                 },
                 "05_try_best_cake": {
                     "input_paths": ["fields.worlds.best_cake"],
                     "output_path": "fields.cake",
-                    "function": "throw",
+                    "function": throw,
                     "on_throw": OnThrowValue.Skip,
                 },
                 "06_try_get_country": {
                     "input_paths": ["fields.current_country"],
                     "output_path": "fields.country",
-                    "function": "throw",
+                    "function": throw,
                     "or_else": "Greece",
                     "on_throw": OnThrowValue.OrElse,
                 },

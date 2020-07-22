@@ -76,7 +76,8 @@ class FieldsParser:
         "input_paths",
         "possible_paths",
         "path_condition",
-        "type",
+        "from_type",
+        "to_type",
         "function",
         "or_else",
         "on_throw",
@@ -108,9 +109,9 @@ class FieldsParser:
             throw_action = parse_on_throw(field, field_obj)
             field_obj.on_throw = throw_action
 
-        if field.get("type"):
+        if field.get("from_type"):
             # TODO: Is it possible to check valid definitions during parse?
-            field_obj.type = field.type
+            field_obj.from_type = field.from_type
 
         if field.get("function"):
             if field.function in TomlFunction._functions:
@@ -170,7 +171,7 @@ class FieldsParser:
 
         For now, the only allowed non-reserved keyword is the parent's field_name
         """
-        type_ = field.get("type")
+        from_type = field.get("from_type")
         field_obj["_copy_fields"] = []
 
         for key, value in field.items():
@@ -180,9 +181,9 @@ class FieldsParser:
             if key != field_name:
                 raise TypeError(f"Unknown key found on field definition: {field_name}")
 
-            if not type_:
+            if not from_type:
                 raise TypeError(
-                    "Custom values cannot be set on a definition without declaring a nested object type"
+                    "Custom values cannot be set on a definition without declaring a nested object from_type"
                 )
 
             field_obj[key] = value
@@ -194,12 +195,16 @@ class FieldsParser:
 
 class Parser:
     def parse(self, toml_obj: Munch):
-        if not hasattr(toml_obj, "type"):
-            raise TypeError("'type' must be declared at the top-level.")
-        type_ = toml_obj.type
+        if not hasattr(toml_obj, "from_type"):
+            raise TypeError("'from_type' must be declared at the top-level.")
+        from_type = toml_obj.from_type
+
+        if not hasattr(toml_obj, "to_type"):
+            raise TypeError("'to_type' must be declared at the top-level.")
+        to_type = toml_obj.to_type
 
         parsed_obj = Munch()
-        parsed_obj.type = type_
+        parsed_obj.to_type = to_type
 
         if toml_obj.get("preprocess"):
             parser = PreprocessParser()
@@ -215,4 +220,4 @@ class Parser:
         if toml_obj.get("postprocess"):
             parser = PostprocessParser()
             parsed_obj["postprocess"] = parser.parse(toml_obj.postprocess)
-        return type_, parsed_obj
+        return from_type, to_type, parsed_obj

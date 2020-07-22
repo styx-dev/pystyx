@@ -86,7 +86,8 @@ class FieldsMapper:
         self.functions = functions
 
     def __call__(self, from_obj):
-        to_obj = {}  # TODO: Add other structures potentially
+        # TODO: Add other structures potentially besides JSON
+        to_obj = {"__type__": self.definition.to_type}
 
         for field_name, field_definition in self.definition.fields.items():
             to_obj = self.map_field(from_obj, to_obj, field_name, field_definition)
@@ -126,16 +127,16 @@ class FieldsMapper:
         else:
             value = self.apply_function(field_definition, from_obj)
 
-        if field_definition.get("type"):
+        if field_definition.get("from_type"):
             value = self.map_nested_type(field_name, field_definition, from_obj, value)
 
         return value
 
     def map_nested_type(self, field_name, field_definition, from_obj, value):
-        nested_mapper = self.definitions.get(field_definition.type)
+        nested_mapper = self.definitions.get(field_definition.from_type)
         if not nested_mapper:
             raise RuntimeError(
-                f"Unable to map nested object. Unknown type: {field_definition.type}"
+                f"Unable to map nested object. Unknown type: {field_definition.from_type}"
             )
 
         extended_value = self.copy_fields(field_name, field_definition, from_obj, value)
@@ -170,17 +171,20 @@ class Mapper:
     definitions: Dict[str, Munch]
     fieldsMapper: FieldsMapper
     fieldsMapperClass = FieldsMapper
+    from_type: str
     functions: Dict[str, Callable]
     preprocessMapper: PreprocessMapper
     preprocessMapperClass = PreprocessMapper
     postprocessMapper: PostprocessMapper
     postprocessMapperClass = PostprocessMapper
     raw_map: Munch
-    type: str
+    to_type: str
 
     def __init__(self, toml_map, functions, definitions=None):
         self.raw_map = toml_map
-        (self.type, self.definition) = self.parse_definition(self.raw_map)
+        (self.from_type, self.to_type, self.definition) = self.parse_definition(
+            self.raw_map
+        )
         self.definitions = definitions if definitions is not None else {}
         self.functions = functions
 
@@ -201,7 +205,7 @@ class Mapper:
         return to_obj
 
     def __str__(self):
-        return f"{self.definition.type}Mapper"
+        return f"<Mapper: {self.from_type} -> {self.to_type}>"
 
     def __repr__(self):
         return self.__str__()

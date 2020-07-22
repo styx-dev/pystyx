@@ -148,9 +148,11 @@ class TestPreprocess:
         with pytest.raises(TypeError):
             preprocess_parser.process_action(preprocessor_obj)
 
-    def test_parse_function_successfully(self, preprocess_parser, preprocessor_obj):
+    def test_parse_function_successfully(
+        self, preprocess_parser, preprocessor_obj, TomlFunctionClass
+    ):
         parsed_obj = preprocess_parser.process_action(preprocessor_obj)
-        assert parsed_obj["function"] == preprocessor_obj.function
+        assert parsed_obj["function"] == TomlFunctionClass._functions["parse_json"]
 
     def test_unknown_function_raises(self, preprocess_parser, preprocessor_obj):
         preprocessor_obj.function = "unknown"
@@ -387,9 +389,11 @@ class TestPostprocess:
         with pytest.raises(TypeError):
             postprocess_parser.process_action(postprocessor_obj)
 
-    def test_parse_function_successfully(self, postprocess_parser, postprocessor_obj):
+    def test_parse_function_successfully(
+        self, postprocess_parser, postprocessor_obj, TomlFunctionClass
+    ):
         parsed_obj = postprocess_parser.process_action(postprocessor_obj)
-        assert parsed_obj["function"] == postprocessor_obj.function
+        assert parsed_obj["function"] == TomlFunctionClass._functions["parse_json"]
 
     def test_unknown_function_raises(self, postprocess_parser, postprocessor_obj):
         postprocessor_obj.function = "unknown"

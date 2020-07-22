@@ -17,8 +17,8 @@ def main():
     maps: Dict[str, Mapper] = create_maps()
     blob = _get_json()
 
-    creature_mapper = maps.get("Creature")
-    mapped_object = creature_mapper(blob)
+    customer_mapper = maps.get("customer")
+    mapped_object = customer_mapper(blob)
 
     print(mapped_object)
 
