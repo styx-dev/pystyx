@@ -4,7 +4,7 @@ from munch import Munch, munchify
 from pydash import get, set_
 
 from .parser import Parser
-from .shared import OnThrowValue
+from .shared import OnThrowValue, parse_const
 
 
 def empty_functions_toml():
@@ -121,9 +121,7 @@ class FieldsMapper:
                     "Unable to determine input path. Unable to find option satisfying predicate."
                 )
 
-            value = self.apply_function_to_values(
-                field_definition, iter(potential_values)
-            )
+            value = self.apply_function_to_values(field_definition, potential_values)
         else:
             value = self.apply_function(field_definition, from_obj)
 
@@ -156,14 +154,19 @@ class FieldsMapper:
         or_else = (
             field_definition.or_else if hasattr(field_definition, "or_else") else None
         )
-        values = (get(from_obj, path, or_else) for path in field_definition.input_paths)
+
+        values = []
+        for path in field_definition.input_paths:
+            value, is_const = parse_const(path)
+            values.append(value if is_const else get(from_obj, path, or_else))
+
         return self.apply_function_to_values(field_definition, values)
 
     def apply_function_to_values(self, field_definition, values):
         if field_definition.get("function"):
             return field_definition.function(*values)
         else:
-            return next(values)
+            return values[0]
 
 
 class Mapper:
