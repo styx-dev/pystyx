@@ -6,7 +6,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="pystyx",
-    version="0.4.0",
+    version="0.5.0",
     scripts=[],
     author="Mark Keaton",
     author_email="mkeaton@gmail.com",

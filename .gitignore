@@ -9,3 +9,4 @@ maps/
 build/
 dist/
 pystyx.egg-info/
+.eggs/
