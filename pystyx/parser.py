@@ -81,7 +81,6 @@ class FieldsParser:
         "function",
         "or_else",
         "on_throw",
-        "many",
     }
 
     def parse(self, fields):
@@ -89,9 +88,6 @@ class FieldsParser:
 
         if not fields:
             raise TypeError("'fields' cannot be empty (what are we mapping?)")
-
-        many = fields.pop("many", False) is True
-        field_objs.many = many
 
         for field_name, field in fields.items():
             field_obj = self.parse_field(field)
@@ -207,8 +203,11 @@ class Parser:
             raise TypeError("'to_type' must be declared at the top-level.")
         to_type = toml_obj.to_type
 
+        many = toml_obj.pop("many", False) is True
+
         parsed_obj = Munch()
         parsed_obj.to_type = to_type
+        parsed_obj.many = many
 
         if toml_obj.get("preprocess"):
             parser = PreprocessParser()

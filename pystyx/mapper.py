@@ -89,9 +89,17 @@ class FieldsMapper:
         # TODO: Add other structures potentially besides JSON
         to_obj = {"__type__": self.definition.to_type}
 
+        many = self.definition.many
+
+        if many:
+            from_objs = from_obj
+            return [self._map(from_obj, to_obj) for from_obj in from_objs]
+        else:
+            return self._map(from_obj, to_obj)
+
+    def _map(self, from_obj, to_obj):
         for field_name, field_definition in self.definition.fields.items():
             to_obj = self.map_field(from_obj, to_obj, field_name, field_definition)
-
         return to_obj
 
     def map_field(self, from_obj, to_obj, field_name, field_definition):
