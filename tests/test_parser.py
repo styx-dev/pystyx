@@ -194,13 +194,15 @@ class TestPreprocess:
 
 
 class TestFields:
-    def test_type_is_required(self, parser, field_input_obj):
+    def test_from_type_is_required(self, parser, field_input_obj):
         obj = Munch()
-        with pytest.raises(TypeError, match="'type' must be declared at the top-level"):
+        with pytest.raises(
+            TypeError, match="'from_type' must be declared at the top-level"
+        ):
             parser.parse(obj)
 
     def test_fields_is_required(self, parser, field_input_obj):
-        obj = munchify({"type": "foo"})
+        obj = munchify({"from_type": "foo", "to_type": "bar"})
         with pytest.raises(TypeError, match="'fields' is a required field"):
             parser.parse(obj)
 
@@ -329,7 +331,7 @@ class TestFields:
         field_input_obj["hades"] = "god of underworld"
         with pytest.raises(
             TypeError,
-            match="Custom values cannot be set on a definition without declaring a nested object type",
+            match="Custom values cannot be set on a definition without declaring a nested object from_type",
         ):
             fields_parser.parse_extra_fields("hades", field_input_obj, field_obj)
 
