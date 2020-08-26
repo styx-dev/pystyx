@@ -81,6 +81,7 @@ class FieldsParser:
         "function",
         "or_else",
         "on_throw",
+        "many",
     }
 
     def parse(self, fields):
@@ -88,6 +89,9 @@ class FieldsParser:
 
         if not fields:
             raise TypeError("'fields' cannot be empty (what are we mapping?)")
+
+        many = fields.pop("many", False) is True
+        field_objs.many = many
 
         for field_name, field in fields.items():
             field_obj = self.parse_field(field)

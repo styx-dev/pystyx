@@ -201,6 +201,18 @@ class TestFields:
         ):
             parser.parse(obj)
 
+    def test_many_is_optional(self, parser, field_input_obj):
+        obj = munchify(
+            {
+                "from_type": "foo",
+                "to_type": "bar",
+                "fields": {"key": {"input_paths": ["path"]}},
+            }
+        )
+        parser.parse(obj)
+        obj.fields["many"] = True
+        parser.parse(obj)
+
     def test_fields_is_required(self, parser, field_input_obj):
         obj = munchify({"from_type": "foo", "to_type": "bar"})
         with pytest.raises(TypeError, match="'fields' is a required field"):
