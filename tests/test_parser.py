@@ -210,7 +210,7 @@ class TestFields:
             }
         )
         parser.parse(obj)
-        obj.fields["many"] = True
+        obj.many = True
         parser.parse(obj)
 
     def test_fields_is_required(self, parser, field_input_obj):
