@@ -53,9 +53,16 @@ class ProcessMapper:
                     if skip:
                         continue
 
-                set_(obj, processor.output_path, new_value)
+                obj = self.output_value(obj, processor.output_path, new_value)
 
         return obj
+
+    def output_value(self, obj, output_path, new_value):
+        if output_path == ".":
+            # Allows changing the entire structure by using the 'cwd' alias
+            return new_value
+        else:
+            return set_(obj, output_path, new_value)
 
     def handle_exception(self, processor, exc):
         on_throw_enum = processor.get("on_throw")
