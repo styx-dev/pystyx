@@ -123,6 +123,7 @@ Parsing and validation I would like to extract into its own library eventually.
 | -  from_type             | :heavy_check_mark: |
 | -  or_else               | :heavy_check_mark: |
 | -  on_throw              | :heavy_check_mark: |
+| -  many                  | :heavy_check_mark: |
 | **Postprocessing**       |                    |
 | -  input_paths           | :heavy_check_mark: |
 | -  output_paths          | :heavy_check_mark: |
