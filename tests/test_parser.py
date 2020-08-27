@@ -213,6 +213,56 @@ class TestFields:
         obj.many = True
         parser.parse(obj)
 
+    def test_type_is_optional(self, parser, field_input_obj):
+        obj = munchify(
+            {
+                "from_type": "foo",
+                "to_type": "bar",
+                "fields": {"key": {"input_paths": ["path"]}},
+            }
+        )
+        parser.parse(obj)
+        obj.__type__ = "list"
+        parser.parse(obj)
+
+    def test_type_defaults_to_object(self, parser, field_input_obj):
+        obj = munchify(
+            {
+                "from_type": "foo",
+                "to_type": "bar",
+                "fields": {"key": {"input_paths": ["path"]}},
+            }
+        )
+        _from, _to, definition = parser.parse(obj)
+        assert definition.__type__ == "object"
+
+    def test_type_can_be_list(self, parser, field_input_obj):
+        obj = munchify(
+            {
+                "from_type": "foo",
+                "to_type": "bar",
+                "__type__": "list",
+                "fields": {"key": {"input_paths": ["path"]}},
+            }
+        )
+        _from, _to, definition = parser.parse(obj)
+        assert definition.__type__ == "list"
+
+    def test_type_can_be_list(self, parser, field_input_obj):
+        obj = munchify(
+            {
+                "from_type": "foo",
+                "to_type": "bar",
+                "__type__": "baz",
+                "fields": {"key": {"input_paths": ["path"]}},
+            }
+        )
+        with pytest.raises(
+            TypeError,
+            match="Only declared types available for __type__ are: object, list. Found: baz",
+        ):
+            _from, _to, definition = parser.parse(obj)
+
     def test_fields_is_required(self, parser, field_input_obj):
         obj = munchify({"from_type": "foo", "to_type": "bar"})
         with pytest.raises(TypeError, match="'fields' is a required field"):

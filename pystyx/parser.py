@@ -204,10 +204,17 @@ class Parser:
         to_type = toml_obj.to_type
 
         many = toml_obj.pop("many", False) is True
+        type_ = toml_obj.pop("__type__", "object")
+
+        if type_ not in ("object", "list"):
+            raise TypeError(
+                f"Only declared types available for __type__ are: object, list. Found: {type_}"
+            )
 
         parsed_obj = Munch()
         parsed_obj.to_type = to_type
         parsed_obj.many = many
+        parsed_obj.__type__ = type_
 
         if toml_obj.get("preprocess"):
             parser = PreprocessParser()

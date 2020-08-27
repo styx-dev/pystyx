@@ -94,8 +94,15 @@ class FieldsMapper:
 
     def __call__(self, from_obj):
         # TODO: Add other structures potentially besides JSON
-        to_obj = {"__type__": self.definition.to_type}
-
+        type_ = self.definition.__type__
+        if type_ == "object":
+            to_obj = {"__type__": self.definition.to_type}
+        elif type_ == "list":
+            to_obj = []
+        else:
+            raise RuntimeError(
+                f"Unknown type declaration found: {type_}. How did the parser not catch this?"
+            )
         many = self.definition.many
 
         if many:
