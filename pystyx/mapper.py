@@ -96,7 +96,10 @@ class FieldsMapper:
         # TODO: Add other structures potentially besides JSON
         type_ = self.definition.__type__
         if type_ == "object":
-            to_obj = {"__type__": self.definition.to_type}
+            if self.definition.include_type:
+                to_obj = {"__type__": self.definition.to_type}
+            else:
+                to_obj = {}
         elif type_ == "list":
             to_obj = []
         else:

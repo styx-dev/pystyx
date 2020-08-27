@@ -205,6 +205,7 @@ class Parser:
 
         many = toml_obj.pop("many", False) is True
         type_ = toml_obj.pop("__type__", "object")
+        include_type = toml_obj.pop("include_type", True) is True
 
         if type_ not in ("object", "list"):
             raise TypeError(
@@ -215,6 +216,7 @@ class Parser:
         parsed_obj.to_type = to_type
         parsed_obj.many = many
         parsed_obj.__type__ = type_
+        parsed_obj.include_type = include_type
 
         if toml_obj.get("preprocess"):
             parser = PreprocessParser()
