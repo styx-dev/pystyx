@@ -168,7 +168,11 @@ class FieldsMapper:
         """
         for key in field_definition._copy_fields:
             path = get(field_definition, [field_name, key])
-            value[key] = get(from_obj, path)
+            s, is_const = parse_const(path)
+            if is_const:
+                value[key] = s
+            else:
+                value[key] = get(from_obj, path)
 
         return value
 
