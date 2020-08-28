@@ -32,29 +32,42 @@ class ProcessMapper:
         """
         if self.definition.get(self.processor_key):
             process_dict = getattr(self.definition, self.processor_key)
+            many = process_dict.pop("many")
             processors = sorted(
                 [(key, value) for key, value in process_dict.items()],
                 key=lambda pair: pair[0],
             )
             for (_key, processor) in processors:
-                old_values = (
-                    get(
-                        obj,
-                        path,
-                        processor.or_else if hasattr(processor, "or_else") else None,
-                    )
-                    for path in processor.input_paths
+                if many:
+                    objs = obj
+                    for obj in objs:
+                        obj = self.process(obj, processor)
+                else:
+                    obj = self.process(obj, processor)
+
+        return obj
+
+    def process(self, obj, processor):
+        if processor.input_paths == ["."]:
+            old_values = [obj]
+        else:
+            old_values = (
+                get(
+                    obj,
+                    path,
+                    processor.or_else if hasattr(processor, "or_else") else None,
                 )
+                for path in processor.input_paths
+            )
 
-                try:
-                    new_value = processor.function(*old_values)
-                except Exception as exc:
-                    (new_value, skip) = self.handle_exception(processor, exc)
-                    if skip:
-                        continue
+        try:
+            new_value = processor.function(*old_values)
+        except Exception as exc:
+            (new_value, skip) = self.handle_exception(processor, exc)
+            if skip:
+                return obj
 
-                obj = self.output_value(obj, processor.output_path, new_value)
-
+        obj = self.output_value(obj, processor.output_path, new_value)
         return obj
 
     def output_value(self, obj, output_path, new_value):
@@ -106,7 +119,8 @@ class FieldsMapper:
             raise RuntimeError(
                 f"Unknown type declaration found: {type_}. How did the parser not catch this?"
             )
-        many = self.definition.many
+
+        many = self.definition.fields["many"]
 
         if many:
             from_objs = from_obj
@@ -116,6 +130,8 @@ class FieldsMapper:
 
     def _map(self, from_obj, to_obj):
         for field_name, field_definition in self.definition.fields.items():
+            if field_name == "many":
+                continue
             to_obj = self.map_field(from_obj, to_obj, field_name, field_definition)
         return to_obj
 

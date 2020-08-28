@@ -28,6 +28,10 @@ def parse_on_throw(from_obj, to_obj):
 class ProcessParser:
     def process(self, process):
         process_obj = Munch()
+
+        many = process.pop("many", False) is True
+        process_obj.many = many
+
         for action_name, action in process.items():
             process_obj[action_name] = self.process_action(action)
         return process_obj
@@ -85,6 +89,9 @@ class FieldsParser:
 
     def parse(self, fields):
         field_objs = Munch()
+
+        many = fields.pop("many", False) is True
+        field_objs.many = many
 
         if not fields:
             raise TypeError("'fields' cannot be empty (what are we mapping?)")
@@ -203,7 +210,6 @@ class Parser:
             raise TypeError("'to_type' must be declared at the top-level.")
         to_type = toml_obj.to_type
 
-        many = toml_obj.pop("many", False) is True
         type_ = toml_obj.pop("__type__", "object")
         include_type = toml_obj.pop("include_type", True) is True
 
@@ -214,7 +220,6 @@ class Parser:
 
         parsed_obj = Munch()
         parsed_obj.to_type = to_type
-        parsed_obj.many = many
         parsed_obj.__type__ = type_
         parsed_obj.include_type = include_type
 
