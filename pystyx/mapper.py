@@ -40,8 +40,7 @@ class ProcessMapper:
             for (_key, processor) in processors:
                 if many:
                     objs = obj
-                    for obj in objs:
-                        obj = self.process(obj, processor)
+                    obj = [self.process(obj, processor) for obj in objs]
                 else:
                     obj = self.process(obj, processor)
 
