@@ -29,9 +29,6 @@ class ProcessParser:
     def process(self, process):
         process_obj = Munch()
 
-        many = process.pop("many", False) is True
-        process_obj.many = many
-
         for action_name, action in process.items():
             process_obj[action_name] = self.process_action(action)
         return process_obj
@@ -54,6 +51,9 @@ class ProcessParser:
             action_obj.function = TomlFunction._functions[action.function]
         else:
             raise TypeError(f"unknown function: {action.function}")
+
+        many = action.pop("many", False) is True
+        action_obj.many = many
 
         if action.get("or_else"):
             action_obj.or_else = action.or_else
@@ -85,6 +85,7 @@ class FieldsParser:
         "function",
         "or_else",
         "on_throw",
+        "mapping",
     }
 
     def parse(self, fields):
@@ -119,6 +120,10 @@ class FieldsParser:
         if field.get("from_type"):
             # TODO: Is it possible to check valid definitions during parse?
             field_obj.from_type = field.from_type
+
+        if field.get("mapping"):
+            # TODO: 'mapping' and 'from_type' should not both be possible
+            field_obj.mapping = field.mapping
 
         if field.get("function"):
             if field.function in TomlFunction._functions:

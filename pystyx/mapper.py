@@ -32,12 +32,12 @@ class ProcessMapper:
         """
         if self.definition.get(self.processor_key):
             process_dict = getattr(self.definition, self.processor_key)
-            many = process_dict.pop("many")
             processors = sorted(
                 [(key, value) for key, value in process_dict.items()],
                 key=lambda pair: pair[0],
             )
             for (_key, processor) in processors:
+                many = processor.pop("many")
                 if many:
                     objs = obj
                     obj = [self.process(obj, processor) for obj in objs]
@@ -167,6 +167,11 @@ class FieldsMapper:
 
         if field_definition.get("from_type"):
             value = self.map_nested_type(field_name, field_definition, from_obj, value)
+
+        if field_definition.get("mapping"):
+            mapping = field_definition.get("mapping")
+            default = mapping.get("__default__")
+            value = mapping.get(value, default)
 
         return value
 
