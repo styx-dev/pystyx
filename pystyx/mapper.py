@@ -11,6 +11,17 @@ def empty_functions_toml():
     return munchify({"functions": []})
 
 
+def handle_exception(definition, exc):
+    on_throw_enum = definition.get("on_throw")
+    on_throw_enum_value = getattr(on_throw_enum, "value", None)
+    if on_throw_enum_value == OnThrowValue.Skip.value:
+        return None, True
+    elif on_throw_enum_value == OnThrowValue.OrElse.value:
+        return definition.or_else, False
+    else:
+        raise exc
+
+
 class ProcessMapper:
     definition: Munch
     definitions: Dict[str, Munch]
@@ -62,7 +73,7 @@ class ProcessMapper:
         try:
             new_value = processor.function(*old_values)
         except Exception as exc:
-            (new_value, skip) = self.handle_exception(processor, exc)
+            (new_value, skip) = handle_exception(processor, exc)
             if skip:
                 return obj
 
@@ -75,15 +86,6 @@ class ProcessMapper:
             return new_value
         else:
             return set_(obj, output_path, new_value)
-
-    def handle_exception(self, processor, exc):
-        on_throw_enum = processor.get("on_throw")
-        if on_throw_enum.value == OnThrowValue.Skip.value:
-            return None, True
-        elif on_throw_enum.value == OnThrowValue.OrElse.value:
-            return processor.or_else, False
-        else:
-            raise exc
 
 
 class PreprocessMapper(ProcessMapper):
@@ -135,8 +137,9 @@ class FieldsMapper:
         return to_obj
 
     def map_field(self, from_obj, to_obj, field_name, field_definition):
-        value = self.get_field_value(field_name, from_obj, field_definition)
-        set_(to_obj, field_name, value)
+        (value, skip) = self.get_field_value(field_name, from_obj, field_definition)
+        if not skip:
+            set_(to_obj, field_name, value)
         return to_obj
 
     def get_field_value(self, field_name, from_obj, field_definition):
@@ -161,9 +164,14 @@ class FieldsMapper:
                     "Unable to determine input path. Unable to find option satisfying predicate."
                 )
 
-            value = self.apply_function_to_values(field_definition, potential_values)
+            (value, skip) = self.apply_function_to_values(
+                field_definition, potential_values
+            )
         else:
-            value = self.apply_function(field_definition, from_obj)
+            (value, skip) = self.apply_function(field_definition, from_obj)
+
+        if skip:
+            return None, skip
 
         if field_definition.get("from_type"):
             value = self.map_nested_type(field_name, field_definition, from_obj, value)
@@ -173,7 +181,7 @@ class FieldsMapper:
             default = mapping.get("__default__")
             value = mapping.get(value, default)
 
-        return value
+        return value, False
 
     def map_nested_type(self, field_name, field_definition, from_obj, value):
         nested_mapper = self.definitions.get(field_definition.from_type)
@@ -200,22 +208,25 @@ class FieldsMapper:
         return value
 
     def apply_function(self, field_definition, from_obj):
-        or_else = (
-            field_definition.or_else if hasattr(field_definition, "or_else") else None
-        )
-
         values = []
         for path in field_definition.input_paths:
             value, is_const = parse_const(path)
-            values.append(value if is_const else get(from_obj, path, or_else))
+            values.append(value if is_const else get(from_obj, path, None))
 
         return self.apply_function_to_values(field_definition, values)
 
     def apply_function_to_values(self, field_definition, values):
-        if field_definition.get("function"):
-            return field_definition.function(*values)
-        else:
-            return values[0]
+        try:
+            skip = False
+            if field_definition.get("function"):
+                return field_definition.function(*values), skip
+            else:
+                value = values[0]
+                if value is None:
+                    raise ValueError(f"No value found for path.")
+                return value, skip
+        except Exception as e:
+            return handle_exception(field_definition, e)
 
 
 class Mapper:
