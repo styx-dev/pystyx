@@ -1,3 +1,4 @@
+from copy import copy
 from typing import Callable, Dict, Literal
 
 from munch import Munch, munchify
@@ -125,7 +126,7 @@ class FieldsMapper:
 
         if many:
             from_objs = from_obj
-            return [self._map(from_obj, to_obj) for from_obj in from_objs]
+            return [self._map(from_obj, copy(to_obj)) for from_obj in from_objs]
         else:
             return self._map(from_obj, to_obj)
 
