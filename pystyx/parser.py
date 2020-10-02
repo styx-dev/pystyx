@@ -18,7 +18,7 @@ def parse_on_throw(from_obj, to_obj):
     }.get(from_obj.on_throw, None)
     if not throw_action:
         raise TypeError(f"Unknown 'on_throw' action given: {from_obj.on_throw}")
-    if throw_action == OnThrowValue.OrElse and not to_obj.get("or_else"):
+    if throw_action == OnThrowValue.OrElse and not hasattr(to_obj, "or_else"):
         raise TypeError(
             "If 'on_throw' action is 'or_else', then 'or_else' must be defined."
         )
