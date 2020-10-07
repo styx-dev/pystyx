@@ -62,14 +62,7 @@ class ProcessMapper:
         if processor.input_paths == ["."]:
             old_values = [obj]
         else:
-            old_values = (
-                get(
-                    obj,
-                    path,
-                    processor.or_else if hasattr(processor, "or_else") else None,
-                )
-                for path in processor.input_paths
-            )
+            old_values = self.process_paths(obj, processor)
 
         try:
             new_value = processor.function(*old_values)
@@ -80,6 +73,24 @@ class ProcessMapper:
 
         obj = self.output_value(obj, processor.output_path, new_value)
         return obj
+
+    def process_paths(self, obj, processor):
+        old_values = []
+
+        for path in processor.input_paths:
+            value, is_const = parse_const(path)
+            value = (
+                value
+                if is_const
+                else get(
+                    obj,
+                    path,
+                    processor.or_else if hasattr(processor, "or_else") else None,
+                )
+            )
+            old_values.append(value)
+
+        return old_values
 
     def output_value(self, obj, output_path, new_value):
         if output_path == ".":
