@@ -156,14 +156,16 @@ class FieldsMapper:
             )
 
             if len(potential_values) > 1:
-                raise RuntimeError(
+                exc = RuntimeError(
                     "Unable to determine input path. Found more than one option satisfying predicate."
                 )
+                return handle_exception(field_definition, exc)
 
             if not potential_values:
-                raise RuntimeError(
+                exc = RuntimeError(
                     "Unable to determine input path. Unable to find option satisfying predicate."
                 )
+                return handle_exception(field_definition, exc)
 
             (value, skip) = self.apply_function_to_values(
                 field_definition, potential_values
